@@ -1,12 +1,19 @@
-import { clerkMiddleware } from "@clerk/nextjs/server";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 
-export default clerkMiddleware();
+// Define protected routes (routes that require authentication)
+const isProtectedRoute = createRouteMatcher(['/', '/api/generate-image', '/api/poll-image']);
+
+export default clerkMiddleware((auth, req) => {
+    const { userId } = auth();
+
+    if (!userId && isProtectedRoute(req)) {
+        return NextResponse.redirect(new URL('/sign-in', req.url));
+    }
+
+    return NextResponse.next();
+});
 
 export const config = {
-  matcher: [
-    // Skip Next.js internals and all static files, unless found in search params
-    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    // Always run for API routes
-    '/(api|trpc)(.*)',
-  ],
+  matcher: ["/((?!.*\\..*|_next).*)", "/", "/(api|trpc)(.*)"],
 };
