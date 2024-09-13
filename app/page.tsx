@@ -26,6 +26,36 @@ export default function Home() {
     }
   }, [isLoaded, isSignedIn]);
 
+  const fetchImages = async () => {
+    try {
+      const [imagesResponse, userLikes] = await Promise.all([
+        fetch('/api/get-images'),
+        fetchUserLikes()
+      ]);
+      if (!imagesResponse.ok) {
+        throw new Error('Failed to fetch images');
+      }
+      const data = await imagesResponse.json();
+      if (Array.isArray(data.images)) {
+        const imagesWithLikeStatus = data.images.map((image: GeneratedImage) => ({
+          ...image,
+          is_liked: userLikes.has(image.id)
+        }));
+        setGeneratedImages(imagesWithLikeStatus);
+      } else {
+        console.error('Received invalid image data:', data);
+      }
+    } catch (error) {
+      console.error('Error fetching images:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      fetchImages();
+    }
+  }, [isLoaded, isSignedIn]);
+
   const createOrFetchUser = async () => {
     try {
       const response = await fetch('/api/user', { method: 'POST' });
@@ -39,7 +69,7 @@ export default function Home() {
     }
   };
 
-  const fetchImages = async () => {
+  const fetchImagesAndLikes = async () => {
     try {
       const [imagesResponse, userLikes] = await Promise.all([
         fetch('/api/get-images'),
@@ -85,7 +115,7 @@ export default function Home() {
     }
   };
 
-  const updateImageLikes = async (imageId: number, currentLikesCount: number, isCurrentlyLiked: boolean) => {
+  const updateImageLikes = async (imageId: number) => {
     try {
       const response = await fetch('/api/like-image', {
         method: 'POST',

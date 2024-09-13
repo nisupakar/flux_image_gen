@@ -41,7 +41,7 @@ export async function POST(request: Request) {
 
       // Upload to Supabase
       const fileName = `${userId}_${Date.now()}.png`;
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from('Images')
         .upload(fileName, imageBuffer, {
           contentType: 'image/png'
@@ -86,4 +86,5 @@ export async function POST(request: Request) {
   }
 }
 export const runtime = 'edge';
-export const maxDuration = 300;
+export const maxDuration = 300
+;
