@@ -85,3 +85,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to generate or save image' }, { status: 500 });
   }
 }
+export const runtime = 'edge';
+export const maxDuration = 300;
