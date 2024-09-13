@@ -5,25 +5,13 @@ import { useUser } from "@clerk/nextjs";
 import { useRouter } from 'next/navigation';
 import ImageGrid from '../components/image-grid';
 import ImageGenerator from '../components/image-generator';
-
-interface GeneratedImage {
-  id: number;
-  image_url: string;
-  prompt: string;
-  likes_count: number;
-  creator_user_id: string;
-  created_at: string;
-}
+import { GeneratedImage } from './types';
 
 export default function Home() {
   const { isLoaded, isSignedIn, user } = useUser();
   const router = useRouter();
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
-  console.log('Current generatedImages:', generatedImages);
-  useEffect(() => {
-    console.log('generatedImages updated:', generatedImages);
-  }, [generatedImages]);
 
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
@@ -34,82 +22,9 @@ export default function Home() {
   useEffect(() => {
     if (isLoaded && isSignedIn) {
       createOrFetchUser();
-    }
-  }, [isLoaded, isSignedIn]);
-
-  useEffect(() => {
-    const fetchImages = async () => {
-      try {
-        const response = await fetch('/api/get-images');
-        if (!response.ok) {
-          throw new Error('Failed to fetch images');
-        }
-        const data = await response.json();
-        console.log('Fetched images in Home:', data.images);
-        if (Array.isArray(data.images)) {
-          setGeneratedImages(data.images);
-        } else {
-          console.error('Received invalid image data:', data);
-        }
-      } catch (error) {
-        console.error('Error fetching images:', error);
-      }
-    };
-
-    if (isSignedIn) {
       fetchImages();
     }
-  }, [isSignedIn]);
-
-  const handleGenerateImage = async (prompt: string) => {
-    setIsGenerating(true);
-    try {
-      const response = await fetch('/api/generate-image', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prompt }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate image');
-      }
-
-      const data = await response.json();
-      console.log('API response:', data);
-
-      if (data.image) {
-        setGeneratedImages((prevImages) => [data.image, ...prevImages]);
-      } else {
-        throw new Error('Image generation failed');
-      }
-    } catch (error) {
-      console.error('Error generating image:', error);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const pollForResult = async (id: string) => {
-    const pollInterval = 1000;
-    const maxAttempts = 60;
-
-    for (let i = 0; i < maxAttempts; i++) {
-      const response = await fetch(`/api/poll-image?id=${id}`);
-      const result = await response.json();
-
-      if (result.status === 'succeeded') {
-        return result;
-      } else if (result.status === 'failed') {
-        throw new Error('Image generation failed');
-      }
-
-      await new Promise(resolve => setTimeout(resolve, pollInterval));
-    }
-
-    throw new Error('Timeout while waiting for image generation');
-  };
+  }, [isLoaded, isSignedIn]);
 
   const createOrFetchUser = async () => {
     try {
@@ -124,12 +39,96 @@ export default function Home() {
     }
   };
 
-  const updateImageLikes = (imageId: number, newLikesCount: number) => {
-    setGeneratedImages(prevImages =>
-      prevImages.map(img =>
-        img.id === imageId ? { ...img, likes_count: newLikesCount } : img
-      )
-    );
+  const fetchImages = async () => {
+    try {
+      const [imagesResponse, userLikes] = await Promise.all([
+        fetch('/api/get-images'),
+        fetchUserLikes()
+      ]);
+      if (!imagesResponse.ok) {
+        throw new Error('Failed to fetch images');
+      }
+      const data = await imagesResponse.json();
+      if (Array.isArray(data.images)) {
+        const imagesWithLikeStatus = data.images.map((image: GeneratedImage) => ({
+          ...image,
+          is_liked: userLikes.has(image.id)
+        }));
+        setGeneratedImages(imagesWithLikeStatus);
+      } else {
+        console.error('Received invalid image data:', data);
+      }
+    } catch (error) {
+      console.error('Error fetching images:', error);
+    }
+  };
+
+  const handleGenerateImage = async (prompt: string) => {
+    setIsGenerating(true);
+    try {
+      const response = await fetch('/api/generate-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to generate image');
+      }
+      const data = await response.json();
+      setGeneratedImages(prevImages => [data.image as GeneratedImage, ...prevImages]);
+    } catch (error) {
+      console.error('Error generating image:', error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const updateImageLikes = async (imageId: number, currentLikesCount: number, isCurrentlyLiked: boolean) => {
+    try {
+      const response = await fetch('/api/like-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ imageId }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update likes');
+      }
+
+      const data = await response.json();
+      
+      setGeneratedImages(prevImages =>
+        prevImages.map(img =>
+          img.id === imageId 
+            ? { 
+                ...img, 
+                likes_count: data.likes,
+                is_liked: data.action === 'liked'
+              } 
+            : img
+        )
+      );
+    } catch (error) {
+      console.error('Error updating likes:', error);
+    }
+  };
+
+  const fetchUserLikes = async () => {
+    try {
+      const response = await fetch('/api/get-user-likes');
+      if (!response.ok) {
+        throw new Error('Failed to fetch user likes');
+      }
+      const data = await response.json();
+      return new Set(data.likedImageIds);
+    } catch (error) {
+      console.error('Error fetching user likes:', error);
+      return new Set();
+    }
   };
 
   if (!isLoaded || !isSignedIn) {
