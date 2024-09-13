@@ -23,8 +23,8 @@ import Replicate from "replicate";
 const replicate = new Replicate();
 
 const input = {
-    prompt: "a beautiful castle frstingln illustration",
-    hf_lora: "alvdansen/frosting_lane_flux"
+    prompt: prompt, # use the prompt inputted by user
+    hf_lora: "nsuakar/flux_nishant_lora" # please use only this hf_lora
 };
 
 const output = await replicate.run("lucataco/flux-dev-lora:613a21a57e8545532d2f4016a7c3cfa3c7c63fded03001c2e69183d557a929db", { input });
@@ -67,6 +67,11 @@ Format of the output images
 guidance_scale
 number
 Guidance scale for the diffusion process
+
+lora_scale
+number
+Scale for the strength of Lora used
+Please use lora scale as 0.92 for now 
 
 output_quality
 integer

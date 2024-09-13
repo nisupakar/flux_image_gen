@@ -1,28 +1,27 @@
 import { NextResponse } from 'next/server';
+import Replicate from "replicate";
 
 export async function POST(request: Request) {
   const { prompt } = await request.json();
-
   try {
-    const response = await fetch("https://api.replicate.com/v1/predictions", {
-      method: "POST",
-      headers: {
-        Authorization: `Token ${process.env.REPLICATE_API_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        version: "39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
-        input: { prompt: prompt }
-      }),
+    const replicate = new Replicate();
+    const input = {
+      prompt: prompt,
+      hf_lora: "nsuakar/flux_nishant_lora",
+      lora_scale: 0.92
+    };
+
+    const output = await replicate.run(
+      "lucataco/flux-dev-lora:613a21a57e8545532d2f4016a7c3cfa3c7c63fded03001c2e69183d557a929db",
+      { input }
+    );
+
+    console.log('Replicate API response:', output);
+    return NextResponse.json({
+      status: 'succeeded',
+      id: Date.now().toString(), // Generate a unique ID
+      output: output
     });
-
-    if (response.status !== 201) {
-      let error = await response.json();
-      return NextResponse.json({ error: error.detail }, { status: response.status });
-    }
-
-    let prediction = await response.json();
-    return NextResponse.json(prediction);
   } catch (error) {
     console.error('Error generating image:', error);
     return NextResponse.json({ error: 'Failed to generate image' }, { status: 500 });

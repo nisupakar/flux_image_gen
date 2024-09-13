@@ -41,6 +41,7 @@ const dummyImages: GeneratedImage[] = [
 ];
 
 const ImageGrid: React.FC<ImageGridProps> = ({ images = dummyImages }) => {
+  console.log('Received images:', images);
   const [likedImages, setLikedImages] = useState<{ [key: string]: boolean }>({});
 
   const handleDownload = async (imageUrl: string, prompt: string) => {

@@ -40,15 +40,19 @@ export default function Home() {
       }
 
       const data = await response.json();
-      const result = await pollForResult(data.id);
+      console.log('API response:', data);
 
-      const newImage: GeneratedImage = {
-        id: result.id,
-        url: result.output[0],
-        prompt: prompt,
-      };
-
-      setGeneratedImages((prevImages) => [newImage, ...prevImages]);
+      if (data.status === 'succeeded') {
+        const newImage: GeneratedImage = {
+          id: data.id,
+          url: data.output[0],
+          prompt: prompt,
+        };
+        setGeneratedImages((prevImages) => [newImage, ...prevImages]);
+        console.log('Updated generatedImages:', [newImage, ...generatedImages]);
+      } else {
+        throw new Error('Image generation failed');
+      }
     } catch (error) {
       console.error('Error generating image:', error);
     } finally {
