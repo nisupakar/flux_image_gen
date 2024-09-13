@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from 'next/navigation';
 import ImageGrid from '../components/image-grid';
@@ -26,7 +26,7 @@ export default function Home() {
     }
   }, [isLoaded, isSignedIn]);
 
-  const fetchImages = async () => {
+  const fetchImages = useCallback(async () => {
     try {
       const [imagesResponse, userLikes] = await Promise.all([
         fetch('/api/get-images'),
@@ -48,13 +48,13 @@ export default function Home() {
     } catch (error) {
       console.error('Error fetching images:', error);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (isLoaded && isSignedIn) {
       fetchImages();
     }
-  }, [isLoaded, isSignedIn]);
+  }, [isLoaded, isSignedIn, fetchImages]);
 
   const createOrFetchUser = async () => {
     try {
@@ -66,30 +66,6 @@ export default function Home() {
       console.log('User data:', data);
     } catch (error) {
       console.error('Error creating or fetching user:', error);
-    }
-  };
-
-  const fetchImagesAndLikes = async () => {
-    try {
-      const [imagesResponse, userLikes] = await Promise.all([
-        fetch('/api/get-images'),
-        fetchUserLikes()
-      ]);
-      if (!imagesResponse.ok) {
-        throw new Error('Failed to fetch images');
-      }
-      const data = await imagesResponse.json();
-      if (Array.isArray(data.images)) {
-        const imagesWithLikeStatus = data.images.map((image: GeneratedImage) => ({
-          ...image,
-          is_liked: userLikes.has(image.id)
-        }));
-        setGeneratedImages(imagesWithLikeStatus);
-      } else {
-        console.error('Received invalid image data:', data);
-      }
-    } catch (error) {
-      console.error('Error fetching images:', error);
     }
   };
 
