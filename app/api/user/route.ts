@@ -4,6 +4,9 @@ import { auth } from '@clerk/nextjs/server';
 
 // Initialize Supabase client
 
+
+
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
