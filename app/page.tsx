@@ -2,14 +2,12 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useUser } from "@clerk/nextjs";
-import { useRouter } from 'next/navigation';
 import ImageGrid from '../components/image-grid';
 import ImageGenerator from '../components/image-generator';
 import { GeneratedImage } from './types';
 
 export default function Home() {
   const { isLoaded, isSignedIn, user } = useUser();
-  const router = useRouter();
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
 
