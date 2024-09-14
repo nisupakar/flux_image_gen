@@ -13,19 +13,6 @@ export default function Home() {
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  useEffect(() => {
-    if (isLoaded && !isSignedIn) {
-      router.push('/sign-in');
-    }
-  }, [isLoaded, isSignedIn, router]);
-
-  useEffect(() => {
-    if (isLoaded && isSignedIn) {
-      createOrFetchUser();
-      fetchImages();
-    }
-  }, [isLoaded, isSignedIn]);
-
   const fetchImages = useCallback(async () => {
     try {
       const [imagesResponse, userLikes] = await Promise.all([
@@ -51,12 +38,14 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (isLoaded && isSignedIn) {
-      fetchImages();
+    if (isLoaded && !isSignedIn) {
+      router.push('/sign-in');
     }
-  }, [isLoaded, isSignedIn, fetchImages]);
+  }, [isLoaded, isSignedIn, router]);
 
-  const createOrFetchUser = async () => {
+ 
+
+  const createOrFetchUser = useCallback(async () => {
     try {
       const response = await fetch('/api/user', { method: 'POST' });
       if (!response.ok) {
@@ -67,7 +56,7 @@ export default function Home() {
     } catch (error) {
       console.error('Error creating or fetching user:', error);
     }
-  };
+  }, []);
 
   const handleGenerateImage = async (prompt: string) => {
     setIsGenerating(true);

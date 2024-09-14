@@ -8,17 +8,6 @@ const replicate = new Replicate({
 });
 
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  }
-);
-
 export async function POST(request: Request) {
   const { userId, getToken } = auth();
   if (!userId) {
