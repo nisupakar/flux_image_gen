@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from 'next/navigation';
 import ImageGrid from '../components/image-grid';
@@ -13,7 +13,7 @@ export default function Home() {
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const fetchImages = async () => {
+  const fetchImages = useCallback(async () => {
     try {
       const [imagesResponse, userLikes] = await Promise.all([
         fetch('/api/get-images'),
@@ -29,17 +29,19 @@ export default function Home() {
           is_liked: userLikes.has(image.id)
         }));
         setGeneratedImages(imagesWithLikeStatus);
+        console.log('Updated generatedImages:', imagesWithLikeStatus);
       } else {
         console.error('Received invalid image data:', data);
       }
     } catch (error) {
       console.error('Error fetching images:', error);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    if (isLoaded && !isSignedIn) {
-      router.push('/sign-in');
+    if (isLoaded && isSignedIn) {
+      createOrFetchUser();
+      fetchImages();
     }
   }, [isLoaded, isSignedIn, fetchImages]);
 
@@ -128,6 +130,7 @@ export default function Home() {
     return null;
   }
 
+  console.log('Rendering ImageGrid with images:', generatedImages);
   return (
     <main className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-6">Welcome, {user?.firstName}!</h1>
