@@ -16,15 +16,17 @@ export async function POST(request: Request) {
 
   try {
     const supabaseAccessToken = await getToken({ template: 'supabase' });
+    if (!supabaseAccessToken) {
+      throw new Error('Failed to get Supabase access token');
+    }
     const supabaseClient = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
       {
-        global: {
-          headers: {
-            Authorization: `Bearer ${supabaseAccessToken}`,
-          },
-        },
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
       }
     );
 
