@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from 'next/navigation';
 import ImageGrid from '../components/image-grid';
@@ -13,7 +13,7 @@ export default function Home() {
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const fetchImages = useCallback(async () => {
+  const fetchImages = async () => {
     try {
       const [imagesResponse, userLikes] = await Promise.all([
         fetch('/api/get-images'),
@@ -35,17 +35,15 @@ export default function Home() {
     } catch (error) {
       console.error('Error fetching images:', error);
     }
-  }, []);
+  };
 
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
       router.push('/sign-in');
     }
-  }, [isLoaded, isSignedIn, router]);
+  }, [isLoaded, isSignedIn, fetchImages]);
 
- 
-
-  const createOrFetchUser = useCallback(async () => {
+  const createOrFetchUser = async () => {
     try {
       const response = await fetch('/api/user', { method: 'POST' });
       if (!response.ok) {
@@ -56,7 +54,7 @@ export default function Home() {
     } catch (error) {
       console.error('Error creating or fetching user:', error);
     }
-  }, []);
+  };
 
   const handleGenerateImage = async (prompt: string) => {
     setIsGenerating(true);
